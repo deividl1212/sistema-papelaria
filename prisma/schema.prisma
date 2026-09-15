@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           BigInt   @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Product {
+  id               BigInt            @id @default(autoincrement())
+  name             String
+  barcode          String            @unique
+  category         String
+  brand            String?
+  costPrice        Decimal           @db.Decimal(10, 2)
+  salePrice        Decimal           @db.Decimal(10, 2)
+  stock            Int               @default(0)
+  minStock         Int               @default(0)
+  createdAt        DateTime          @default(now())
+  saleItems        SaleItem[]
+  stockAdjustments StockAdjustment[]
+}
+
+model StockAdjustment {
+  id            BigInt   @id @default(autoincrement())
+  product       Product  @relation(fields: [productId], references: [id])
+  productId     BigInt
+  previousStock Int
+  newStock      Int
+  reason        String?
+  createdAt     DateTime @default(now())
+}
+
+model Customer {
+  id                BigInt             @id @default(autoincrement())
+  name              String
+  phone             String?
+  city              String?
+  lastPurchaseAt    DateTime?
+  totalSpent        Decimal            @default(0) @db.Decimal(10, 2)
+  createdAt         DateTime           @default(now())
+  sales             Sale[]
+  crediarioAccounts CrediarioAccount[]
+}
+
+model Supplier {
+  id          BigInt    @id @default(autoincrement())
+  legalName   String
+  tradeName   String?
+  cnpj        String?
+  contactName String?
+  createdAt   DateTime  @default(now())
+  payables    Payable[]
+}
+
+model CashRegister {
+  id            BigInt           @id @default(autoincrement())
+  openedAt      DateTime         @default(now())
+  closedAt      DateTime?
+  openingAmount Decimal          @db.Decimal(10, 2)
+  status        String           @default("aberto")
+  withdrawals   CashWithdrawal[]
+  sales         Sale[]
+}
+
+model CashWithdrawal {
+  id             BigInt       @id @default(autoincrement())
+  cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id])
+  cashRegisterId BigInt
+  amount         Decimal      @db.Decimal(10, 2)
+  reason         String?
+  createdAt      DateTime     @default(now())
+}
+
+model Sale {
+  id               BigInt            @id @default(autoincrement())
+  customer         Customer?         @relation(fields: [customerId], references: [id])
+  customerId       BigInt?
+  customerNameFree String?
+  cashRegister     CashRegister?     @relation(fields: [cashRegisterId], references: [id])
+  cashRegisterId   BigInt?
+  discount         Decimal           @default(0) @db.Decimal(10, 2)
+  surcharge        Decimal           @default(0) @db.Decimal(10, 2)
+  total            Decimal           @db.Decimal(10, 2)
+  paymentMethod    String
+  installments     Int?
+  downPayment      Decimal?          @db.Decimal(10, 2)
+  createdAt        DateTime          @default(now())
+  items            SaleItem[]
+  crediarioAccount CrediarioAccount?
+}
+
+model SaleItem {
+  id        BigInt  @id @default(autoincrement())
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  saleId    BigInt
+  product   Product @relation(fields: [productId], references: [id])
+  productId BigInt
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+}
+
+model Payable {
+  id               BigInt    @id @default(autoincrement())
+  supplier         Supplier? @relation(fields: [supplierId], references: [id])
+  supplierId       BigInt?
+  supplierNameFree String?
+  category         String
+  amount           Decimal   @db.Decimal(10, 2)
+  description      String?
+  paymentMethod    String
+  dueDate          DateTime
+  invoiceNumber    String?
+  status           String    @default("Pendente")
+  createdAt        DateTime  @default(now())
+}
+
+model CrediarioAccount {
+  id               BigInt             @id @default(autoincrement())
+  sale             Sale               @relation(fields: [saleId], references: [id])
+  saleId           BigInt             @unique
+  customer         Customer?          @relation(fields: [customerId], references: [id])
+  customerId       BigInt?
+  customerNameFree String?
+  totalAmount      Decimal            @db.Decimal(10, 2)
+  paidAmount       Decimal            @default(0) @db.Decimal(10, 2)
+  balance          Decimal            @db.Decimal(10, 2)
+  status           String             @default("Pendente")
+  termDays         Int?
+  installments     Int?
+  dueDate          DateTime?
+  createdAt        DateTime           @default(now())
+  payments         CrediarioPayment[]
+}
+
+model CrediarioPayment {
+  id            BigInt           @id @default(autoincrement())
+  account       CrediarioAccount @relation(fields: [accountId], references: [id])
+  accountId     BigInt
+  amount        Decimal          @db.Decimal(10, 2)
+  paymentMethod String
+  paidAt        DateTime         @default(now())
+}
