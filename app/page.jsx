@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import AppShell from "./AppShell";
 
+function dataHoraBR(date) {
+  return {
+    data: date.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }),
+    hora: date.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
 export default async function Page() {
   const [
     produtosDoBanco,
@@ -72,8 +79,7 @@ export default async function Page() {
 
   const initialSales = vendasDoBanco.map((s) => ({
     id: Number(s.id),
-    data: s.createdAt.toISOString().slice(0, 10),
-    hora: s.createdAt.toISOString().slice(11, 16),
+    ...dataHoraBR(s.createdAt),
     cliente: s.customerNameFree || "",
     itens: s.items.map((i) => ({
       produtoId: Number(i.productId),
@@ -100,8 +106,7 @@ export default async function Page() {
     parcelas: c.installments,
     vencimento: c.dueDate ? c.dueDate.toISOString().slice(0, 10) : null,
     recebimentos: c.payments.map((p) => ({
-      data: p.paidAt.toISOString().slice(0, 10),
-      hora: p.paidAt.toISOString().slice(11, 16),
+      ...dataHoraBR(p.paidAt),
       valor: p.amount.toNumber(),
       forma: p.paymentMethod,
     })),
@@ -113,7 +118,7 @@ export default async function Page() {
         aberto: true,
         valorInicial: caixaAberto.openingAmount.toNumber(),
         sangrias: caixaAberto.withdrawals.map((w) => ({
-          hora: w.createdAt.toISOString().slice(11, 16),
+          hora: dataHoraBR(w.createdAt).hora,
           valor: w.amount.toNumber(),
           motivo: w.reason || "",
         })),

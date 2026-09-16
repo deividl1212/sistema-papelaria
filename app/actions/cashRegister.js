@@ -2,6 +2,13 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
+function dataHoraBR(date) {
+  return {
+    data: date.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }),
+    hora: date.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
 export async function abrirCaixa(valorInicial) {
   const caixa = await prisma.cashRegister.create({
     data: { openingAmount: valorInicial, status: "aberto" },
@@ -21,7 +28,7 @@ export async function registrarSangria(cashRegisterId, valor, motivo) {
   });
   revalidatePath("/");
   return {
-    hora: s.createdAt.toISOString().slice(11, 16),
+    hora: dataHoraBR(s.createdAt).hora,
     valor: s.amount.toNumber(),
     motivo: s.reason || "",
   };

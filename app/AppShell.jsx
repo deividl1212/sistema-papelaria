@@ -61,8 +61,8 @@ const comprovanteVendaTexto = (v) => [
   "------------------------------",
   `Total pago: ${brl(v.total)}`,
   `Forma de pagamento: ${v.pagamento}`,
-  v.pagamento === "Dinheiro" ? `Valor recebido: ${brl(v.valorRecebido)}` : null,
-  v.pagamento === "Dinheiro" ? `Troco: ${brl(v.troco)}` : null,
+  v.pagamento === "Dinheiro" && v.valorRecebido != null ? `Valor recebido: ${brl(v.valorRecebido)}` : null,
+  v.pagamento === "Dinheiro" && v.valorRecebido != null ? `Troco: ${brl(v.troco)}` : null,
   "------------------------------",
   "Obrigado pela sua preferência, volte sempre!",
 ].filter(Boolean).join("\n");
@@ -423,7 +423,6 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
   const [showAbrirCaixa, setShowAbrirCaixa] = useState(false);
   const [showSangria, setShowSangria] = useState(false);
   const [showFecharCaixa, setShowFecharCaixa] = useState(false);
-  const [viewSale, setViewSale] = useState(null);
   const [comprovanteVenda, setComprovanteVenda] = useState(null);
 
   const results = query.length > 0
@@ -642,8 +641,8 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
                 <td style={td}>{s.pagamento}</td>
                 <td style={td}>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button style={iconBtn} onClick={() => setViewSale(s)}><Eye size={14} /></button>
-                    <button style={iconBtn} onClick={() => window.print()}><Printer size={14} /></button>
+                    <button style={iconBtn} onClick={() => setComprovanteVenda(s)}><Eye size={14} /></button>
+                    <button style={iconBtn} onClick={() => { setComprovanteVenda(s); setTimeout(() => window.print(), 120); }}><Printer size={14} /></button>
                     <button style={{ ...iconBtn, background: "#FBE8E6", borderColor: "#F0C6C2", color: "#B3261E" }} onClick={() => excluirVenda(s)}><Trash2 size={14} /></button>
                   </div>
                 </td>
@@ -652,17 +651,6 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
           </tbody>
         </table>
       </div>
-
-      {viewSale && (
-        <Modal title={`Venda #${viewSale.id}`} onClose={() => setViewSale(null)}>
-          <div style={{ fontSize: 13.5, color: "#23231F", marginBottom: 10 }}>{viewSale.data.split("-").reverse().join("/")} às {viewSale.hora} · {viewSale.cliente || "Cliente balcão"}</div>
-          <table><thead><tr><th style={th}>Produto</th><th style={th}>Qtd</th><th style={th}>Preço</th></tr></thead>
-            <tbody>{viewSale.itens.map((i, idx) => <tr key={idx}><td style={td}>{i.nome}</td><td style={td}>{i.qtd}</td><td style={td}>{brl(i.preco)}</td></tr>)}</tbody>
-          </table>
-          <div style={{ marginTop: 12, fontSize: 15, fontWeight: 700, textAlign: "right" }}>Total: {brl(viewSale.total)}</div>
-          <div style={{ textAlign: "right", fontSize: 12.5, color: "#23231F" }}>Pagamento: {viewSale.pagamento}</div>
-        </Modal>
-      )}
 
       {comprovanteVenda && (
         <Modal title="Comprovante da venda" onClose={() => setComprovanteVenda(null)} width={380}>
@@ -700,7 +688,7 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
             <div style={{ marginTop: 8, fontSize: 11.5 }}>Forma de pagamento:</div>
             <div style={{ fontWeight: 700, fontSize: 12.5 }}>{comprovanteVenda.pagamento}</div>
 
-            {comprovanteVenda.pagamento === "Dinheiro" && (
+            {comprovanteVenda.pagamento === "Dinheiro" && comprovanteVenda.valorRecebido !== undefined && comprovanteVenda.valorRecebido !== null && (
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, marginTop: 4 }}>
                   <span>Valor recebido</span><span>{brl(comprovanteVenda.valorRecebido)}</span>
