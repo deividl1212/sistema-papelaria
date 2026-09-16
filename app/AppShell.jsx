@@ -54,17 +54,17 @@ const comprovanteTexto = (c) => [
 
 const comprovanteVendaTexto = (v) => [
   "*Papelaria Moura*",
-  "Comprovante de venda",
-  "",
-  `Data: ${v.data.split("-").reverse().join("/")} às ${v.hora}`,
+  `Data: ${v.data.split("-").reverse().join("/")}    Hora: ${v.hora}`,
   `Cliente: ${v.cliente || "Cliente balcão"}`,
-  "",
+  "------------------------------",
   ...v.itens.map((i) => `${i.qtd}x ${i.nome} — ${brl(i.preco * i.qtd)}`),
-  "",
-  `Total: ${brl(v.total)}`,
-  `Pagamento: ${v.pagamento}`,
+  "------------------------------",
+  `Total pago: ${brl(v.total)}`,
+  `Forma de pagamento: ${v.pagamento}`,
   v.pagamento === "Dinheiro" ? `Valor recebido: ${brl(v.valorRecebido)}` : null,
   v.pagamento === "Dinheiro" ? `Troco: ${brl(v.troco)}` : null,
+  "------------------------------",
+  "Obrigado pela sua preferência, volte sempre!",
 ].filter(Boolean).join("\n");
 
 const compartilharTexto = async (texto, titulo, pushToast) => {
@@ -667,22 +667,52 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
       {comprovanteVenda && (
         <Modal title="Comprovante da venda" onClose={() => setComprovanteVenda(null)} width={380}>
           <style>{`@media print { @page { size: 80mm auto; margin: 4mm; } body { margin: 0; } }`}</style>
-          <div className="print-area" style={{ fontSize: 13.5, color: "#23231F" }}>
-            <div style={{ textAlign: "center", marginBottom: 14 }}>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>Papelaria Moura</div>
-              <div style={{ fontSize: 12, color: "#8C897E" }}>{comprovanteVenda.data.split("-").reverse().join("/")} às {comprovanteVenda.hora} · {comprovanteVenda.cliente || "Cliente balcão"}</div>
+          <div className="print-area" style={{ fontSize: 12, color: "#23231F", fontFamily: "'Courier New', Courier, monospace" }}>
+            <div style={{ textAlign: "center", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Papelaria Moura</div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5 }}>
+              <span>Data: {comprovanteVenda.data.split("-").reverse().join("/")}</span>
+              <span>Hora: {comprovanteVenda.hora}</span>
             </div>
-            <table><thead><tr><th style={th}>Produto</th><th style={th}>Qtd</th><th style={th}>Preço</th></tr></thead>
-              <tbody>{comprovanteVenda.itens.map((i, idx) => <tr key={idx}><td style={td}>{i.nome}</td><td style={td}>{i.qtd}</td><td style={td}>{brl(i.preco)}</td></tr>)}</tbody>
-            </table>
-            <div style={{ marginTop: 10, fontSize: 15, fontWeight: 700, textAlign: "right" }}>Total: {brl(comprovanteVenda.total)}</div>
-            <div style={{ textAlign: "right", fontSize: 12.5, color: "#23231F" }}>Pagamento: {comprovanteVenda.pagamento}</div>
-            {comprovanteVenda.pagamento === "Dinheiro" && (
-              <div style={{ borderTop: "1px dashed #DCD7CB", marginTop: 10, paddingTop: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Valor recebido</span><span>{brl(comprovanteVenda.valorRecebido)}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}><span>Troco</span><span>{brl(comprovanteVenda.troco)}</span></div>
+            <div style={{ fontSize: 11.5 }}>Cliente: {comprovanteVenda.cliente || "Cliente balcão"}</div>
+
+            <div style={{ borderTop: "1px dashed #999", margin: "10px 0" }} />
+
+            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 11.5 }}>
+              <span style={{ flex: 2 }}>Produto</span>
+              <span style={{ flex: 1, textAlign: "center" }}>Qtd</span>
+              <span style={{ flex: 1, textAlign: "right" }}>Total</span>
+            </div>
+            {comprovanteVenda.itens.map((i, idx) => (
+              <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5 }}>
+                <span style={{ flex: 2 }}>{i.nome}</span>
+                <span style={{ flex: 1, textAlign: "center" }}>{i.qtd}</span>
+                <span style={{ flex: 1, textAlign: "right" }}>{brl(i.preco * i.qtd)}</span>
               </div>
+            ))}
+
+            <div style={{ borderTop: "1px dashed #999", margin: "10px 0" }} />
+
+            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 13 }}>
+              <span>Total pago</span>
+              <span>{brl(comprovanteVenda.total)}</span>
+            </div>
+
+            <div style={{ marginTop: 8, fontSize: 11.5 }}>Forma de pagamento:</div>
+            <div style={{ fontWeight: 700, fontSize: 12.5 }}>{comprovanteVenda.pagamento}</div>
+
+            {comprovanteVenda.pagamento === "Dinheiro" && (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, marginTop: 4 }}>
+                  <span>Valor recebido</span><span>{brl(comprovanteVenda.valorRecebido)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5 }}>
+                  <span>Troco</span><span>{brl(comprovanteVenda.troco)}</span>
+                </div>
+              </>
             )}
+
+            <div style={{ borderTop: "1px dashed #999", margin: "10px 0" }} />
+            <div style={{ textAlign: "center", fontSize: 11 }}>Obrigado pela sua preferência,<br />volte sempre!</div>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
             <button style={{ ...btnGhost, flex: 1 }} onClick={() => setComprovanteVenda(null)}>Fechar</button>
