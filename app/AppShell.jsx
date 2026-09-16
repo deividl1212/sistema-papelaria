@@ -52,11 +52,25 @@ const comprovanteTexto = (c) => [
   `Saldo em aberto: ${c.saldoAberto <= 0.001 ? "Quitado" : brl(c.saldoAberto)}`,
 ].filter(Boolean).join("\n");
 
-const compartilharComprovante = async (c, pushToast) => {
-  const texto = comprovanteTexto(c);
+const comprovanteVendaTexto = (v) => [
+  "*Papelaria Moura*",
+  "Comprovante de venda",
+  "",
+  `Data: ${v.data.split("-").reverse().join("/")} às ${v.hora}`,
+  `Cliente: ${v.cliente || "Cliente balcão"}`,
+  "",
+  ...v.itens.map((i) => `${i.qtd}x ${i.nome} — ${brl(i.preco * i.qtd)}`),
+  "",
+  `Total: ${brl(v.total)}`,
+  `Pagamento: ${v.pagamento}`,
+  v.pagamento === "Dinheiro" ? `Valor recebido: ${brl(v.valorRecebido)}` : null,
+  v.pagamento === "Dinheiro" ? `Troco: ${brl(v.troco)}` : null,
+].filter(Boolean).join("\n");
+
+const compartilharTexto = async (texto, titulo, pushToast) => {
   if (navigator.share) {
     try {
-      await navigator.share({ title: "Comprovante de recebimento", text: texto });
+      await navigator.share({ title: titulo, text: texto });
       return;
     } catch (e) {
       return; // usuário cancelou o compartilhamento
@@ -66,9 +80,11 @@ const compartilharComprovante = async (c, pushToast) => {
     await navigator.clipboard.writeText(texto);
     pushToast("Texto do comprovante copiado — cole na conversa do WhatsApp");
   } catch (e) {
-    pushToast("Não foi possível copiar automaticamente. Use o botão Imprimir para gerar o PDF.", "error");
+    pushToast("Não foi possível copiar automaticamente. Use o botão Imprimir.", "error");
   }
 };
+const compartilharComprovante = (c, pushToast) => compartilharTexto(comprovanteTexto(c), "Comprovante de recebimento", pushToast);
+const compartilharComprovanteVenda = (v, pushToast) => compartilharTexto(comprovanteVendaTexto(v), "Comprovante de venda", pushToast);
 
 // ---------- mock seed data ----------
 const seedProducts = [
@@ -650,6 +666,7 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
 
       {comprovanteVenda && (
         <Modal title="Comprovante da venda" onClose={() => setComprovanteVenda(null)} width={380}>
+          <style>{`@media print { @page { size: 80mm auto; margin: 4mm; } body { margin: 0; } }`}</style>
           <div className="print-area" style={{ fontSize: 13.5, color: "#23231F" }}>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontWeight: 700, fontSize: 15 }}>Papelaria Moura</div>
@@ -671,6 +688,12 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
             <button style={{ ...btnGhost, flex: 1 }} onClick={() => setComprovanteVenda(null)}>Fechar</button>
             <button style={{ ...btnPrimary, flex: 1 }} onClick={() => window.print()}><Printer size={14} style={{ verticalAlign: -2, marginRight: 6 }} />Imprimir</button>
           </div>
+          <button
+            style={{ ...btnGhost, width: "100%", marginTop: 10, borderColor: "#2F6B4F", color: "#2F6B4F" }}
+            onClick={() => compartilharComprovanteVenda(comprovanteVenda, pushToast)}
+          >
+            Compartilhar comprovante
+          </button>
         </Modal>
       )}
 
@@ -1290,6 +1313,7 @@ function Crediario({ crediario, setCrediario, sales, customers, pushToast }) {
       )}
       {comprovante && (
         <Modal title="Comprovante de recebimento" onClose={() => setComprovante(null)} width={380}>
+          <style>{`@media print { @page { size: 80mm auto; margin: 4mm; } body { margin: 0; } }`}</style>
           <div className="print-area" id="comprovante-print" style={{ fontSize: 13.5, color: "#23231F" }}>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontWeight: 700, fontSize: 15 }}>Papelaria Moura</div>
