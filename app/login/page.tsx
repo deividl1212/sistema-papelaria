@@ -34,16 +34,16 @@ export default function LoginPage() {
     <div style={{ minHeight: "100vh", background: "#16211C", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif" }}>
       <form onSubmit={handleSubmit} style={{ background: "#fff", borderRadius: 10, padding: "40px 36px", width: 340, boxShadow: "0 20px 60px rgba(0,0,0,.35)" }}>
         <img src={LOGO} alt="Papelaria Moura" style={{ width: "100%", maxWidth: 200, display: "block", margin: "0 auto 18px" }} />
-        <div style={{ fontSize: 13, color: "#6B6B62", marginBottom: 24, textAlign: "center" }}>Entre com seu usuário e senha</div>
+        <div style={{ fontSize: 13, color: "#23231F", marginBottom: 24, textAlign: "center" }}>Entre com seu usuário e senha</div>
 
         <label style={{ display: "block", marginBottom: 12 }}>
-          <div style={{ fontSize: 12.5, color: "#6B6B62", marginBottom: 5, fontWeight: 600 }}>Usuário</div>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} style={{ width: "100%", padding: "9px 11px", border: "1px solid #DCD7CB", borderRadius: 10, fontSize: 14 }} />
+          <div style={{ fontSize: 12.5, color: "#23231F", marginBottom: 5, fontWeight: 600 }}>Usuário</div>
+          <input value={username} onChange={(e) => setUsername(e.target.value)} style={{ width: "100%", padding: "9px 11px", border: "1px solid #DCD7CB", borderRadius: 10, fontSize: 14, color: "#23231F" }} />
         </label>
 
         <label style={{ display: "block", marginBottom: 12 }}>
-          <div style={{ fontSize: 12.5, color: "#6B6B62", marginBottom: 5, fontWeight: 600 }}>Senha</div>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: "100%", padding: "9px 11px", border: "1px solid #DCD7CB", borderRadius: 10, fontSize: 14 }} />
+          <div style={{ fontSize: 12.5, color: "#23231F", marginBottom: 5, fontWeight: 600 }}>Senha</div>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: "100%", padding: "9px 11px", border: "1px solid #DCD7CB", borderRadius: 10, fontSize: 14, color: "#23231F" }} />
         </label>
 
         {erro && <div style={{ color: "#B3261E", fontSize: 13, marginBottom: 10 }}>{erro}</div>}
