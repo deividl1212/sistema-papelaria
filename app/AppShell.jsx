@@ -207,6 +207,7 @@ export default function AppShell({
 }) {
   const [screen, setScreen] = useState("pdv");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [dismissedNotifs, setDismissedNotifs] = useState([]);
   const pushToast = (message, type = "success") => {
@@ -298,6 +299,21 @@ export default function AppShell({
           .print-only-header { display: block; }
           table, th, td { border: 1px solid #000 !important; }
         }
+        .mobile-topbar { display: none; }
+        .mobile-overlay { display: none; }
+        @media (max-width: 880px) {
+          .app-sidebar {
+            position: fixed !important; top: 0; left: -260px; height: 100vh; z-index: 200;
+            width: 240px !important; transition: left .22s ease;
+          }
+          .app-sidebar.open { left: 0; }
+          .mobile-topbar { display: flex !important; }
+          .mobile-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 190; }
+          .app-content-inner { padding: 16px !important; }
+          .pdv-grid { grid-template-columns: 1fr !important; }
+          .kpi-card { min-width: 0 !important; flex: 1 1 45% !important; }
+          table { font-size: 12.5px; }
+        }
       `}</style>
       <Toast toasts={toasts} />
       {notificacoesVencimento.length > 0 && (
@@ -328,8 +344,11 @@ export default function AppShell({
         </div>
       )}
 
+      {/* mobile backdrop */}
+      {mobileMenuOpen && <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)} />}
+
       {/* sidebar */}
-      <div style={{ width: sidebarCollapsed ? 76 : 232, background: "#16211C", color: "#EFEFEC", display: "flex", flexDirection: "column", flexShrink: 0, transition: "width .15s ease" }}>
+      <div className={`app-sidebar${mobileMenuOpen ? " open" : ""}`} style={{ width: sidebarCollapsed ? 76 : 232, background: "#16211C", color: "#EFEFEC", display: "flex", flexDirection: "column", flexShrink: 0, transition: "width .15s ease" }}>
         <div style={{ padding: sidebarCollapsed ? "18px 10px 12px" : "18px 18px 12px", borderBottom: "1px solid #24332C" }}>
           <img src={LOGO} alt="Papelaria Moura" style={{ width: "100%", maxWidth: sidebarCollapsed ? 40 : 70, display: "block", margin: "0 auto 8px" }} />
           {!sidebarCollapsed && (
@@ -351,7 +370,7 @@ export default function AppShell({
                 const Icon = n.icon;
                 const active = screen === n.id;
                 return (
-                  <div key={n.id} onClick={() => setScreen(n.id)} title={sidebarCollapsed ? n.label : undefined} style={{
+                  <div key={n.id} onClick={() => { setScreen(n.id); setMobileMenuOpen(false); }} title={sidebarCollapsed ? n.label : undefined} style={{
                     display: "flex", alignItems: "center", gap: 11,
                     padding: sidebarCollapsed ? "10px 0" : "10px 12px",
                     justifyContent: sidebarCollapsed ? "center" : "flex-start",
@@ -385,7 +404,13 @@ export default function AppShell({
 
       {/* main */}
       <div className="app-content" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <div style={{ padding: "26px 32px", flex: 1, overflow: "auto" }}>
+        <div className="mobile-topbar" style={{ alignItems: "center", gap: 12, padding: "12px 16px", borderBottom: "1px solid #E1DDD3", background: "#fff" }}>
+          <button onClick={() => setMobileMenuOpen(true)} style={{ background: "none", border: "1px solid #DCD7CB", borderRadius: 8, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <Menu size={18} />
+          </button>
+          <img src={LOGO} alt="Papelaria Moura" style={{ height: 28 }} />
+        </div>
+        <div className="app-content-inner" style={{ padding: "26px 32px", flex: 1, overflow: "auto" }}>
           {screen === "pdv" && (
             <PDV {...{ products, setProducts, customers, setCustomers, sales, setSales, caixa, setCaixa, crediario, setCrediario, excluirVenda, pushToast }} />
           )}
@@ -511,7 +536,7 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20 }}>
+      <div className="pdv-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20 }}>
         {/* left: search + cart */}
         <div style={{ background: "#fff", border: "1px solid #E1DDD3", borderRadius: 8, padding: 18 }}>
           <div style={{ position: "relative", marginBottom: 14 }}>
@@ -1583,7 +1608,7 @@ function DashboardMensal({ sales, products, payables, customers, crediario }) {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 20 }}>
+      <div className="pdv-grid" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 20 }}>
         <div style={{ background: "#fff", border: "1px solid #E1DDD3", borderRadius: 8, padding: 18 }}>
           <h3 style={{ fontSize: 14.5, marginTop: 0, marginBottom: 14, color: "#23231F", fontWeight: 700 }}>Faturamento por dia</h3>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 140 }}>
