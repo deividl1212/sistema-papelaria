@@ -1,3 +1,4 @@
+
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
@@ -6,7 +7,8 @@ import { prisma } from "@/lib/prisma";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
-    callbacks: {
+  secret: process.env.AUTH_SECRET,
+  callbacks: {
     authorized: async ({ auth }) => {
       return !!auth?.user;
     },
