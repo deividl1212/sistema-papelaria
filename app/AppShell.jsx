@@ -86,32 +86,6 @@ const compartilharTexto = async (texto, titulo, pushToast) => {
 const compartilharComprovante = (c, pushToast) => compartilharTexto(comprovanteTexto(c), "Comprovante de recebimento", pushToast);
 const compartilharComprovanteVenda = (v, pushToast) => compartilharTexto(comprovanteVendaTexto(v), "Comprovante de venda", pushToast);
 
-// ---------- mock seed data ----------
-const seedProducts = [
-  { id: 1, nome: "Camiseta Básica Branca P", codigo: "7891000001", categoria: "Vestuário", marca: "Genérica", custo: 18, preco: 39.9, estoque: 24, estoqueMin: 5 },
-  { id: 2, nome: "Camiseta Básica Preta M", codigo: "7891000002", categoria: "Vestuário", marca: "Genérica", custo: 18, preco: 39.9, estoque: 3, estoqueMin: 5 },
-  { id: 3, nome: "Calça Jeans Slim 42", codigo: "7891000003", categoria: "Vestuário", marca: "Denim Co", custo: 55, preco: 129.9, estoque: 12, estoqueMin: 4 },
-  { id: 4, nome: "Boné Aba Reta Preto", codigo: "7891000004", categoria: "Acessórios", marca: "Genérica", custo: 12, preco: 34.9, estoque: 0, estoqueMin: 3 },
-  { id: 5, nome: "Meia Cano Alto (par)", codigo: "7891000005", categoria: "Acessórios", marca: "Genérica", custo: 4, preco: 12.9, estoque: 40, estoqueMin: 10 },
-  { id: 6, nome: "Jaqueta Corta Vento", codigo: "7891000006", categoria: "Vestuário", marca: "OutWear", custo: 70, preco: 179.9, estoque: 6, estoqueMin: 3 },
-];
-const seedCustomers = [
-  { id: 1, nome: "Maria Souza", telefone: "(88) 99123-4567", cidade: "Jucás", ultimaCompra: "2026-08-20", valorGasto: 480.5 },
-  { id: 2, nome: "João Pereira", telefone: "(88) 99876-1234", cidade: "Iguatu", ultimaCompra: "2026-07-11", valorGasto: 210.0 },
-  { id: 3, nome: "Ana Lima", telefone: "(88) 99555-7890", cidade: "Jucás", ultimaCompra: "2026-08-30", valorGasto: 1240.3 },
-];
-const seedSuppliers = [
-  { id: 1, razaoSocial: "Confecções Nordeste Ltda", fantasia: "ConfNordeste", cnpj: "12.345.678/0001-90", responsavel: "Carlos Dias" },
-];
-const seedPayables = [
-  { id: 1, fornecedor: "Confecções Nordeste Ltda", categoria: "Mercadoria", valor: 1200, descricao: "Reposição vestuário", pagamento: "Boleto", vencimento: "2026-09-05", nf: "4521", status: "Pendente" },
-  { id: 2, fornecedor: "Energia Ceará", categoria: "Utilidades", valor: 340.5, descricao: "Conta de luz", pagamento: "Pix", vencimento: "2026-09-15", nf: "-", status: "Pendente" },
-  { id: 3, fornecedor: "Aluguel Ponto Comercial", categoria: "Aluguel", valor: 1500, descricao: "Aluguel setembro", pagamento: "Pix", vencimento: "2026-08-28", nf: "-", status: "Pendente" },
-];
-const seedSales = [
-  { id: 5001, data: "2026-09-02", hora: "10:15", cliente: "Ana Lima", itens: [{ produtoId: 3, nome: "Calça Jeans Slim 42", qtd: 1, preco: 129.9 }], desconto: 0, acrescimo: 0, total: 129.9, pagamento: "Pix" },
-  { id: 5002, data: "2026-09-02", hora: "14:40", cliente: "", itens: [{ produtoId: 5, nome: "Meia Cano Alto (par)", qtd: 3, preco: 12.9 }], desconto: 0, acrescimo: 0, total: 38.7, pagamento: "Dinheiro" },
-];
 const categorias = [
   "Material Escolar",
   "Material de Escritório",
@@ -217,11 +191,11 @@ export default function AppShell({
   };
 
   // data
-  const [products, setProducts] = useState(initialProducts && initialProducts.length ? initialProducts : seedProducts);
-  const [customers, setCustomers] = useState(initialCustomers && initialCustomers.length ? initialCustomers : seedCustomers);
-  const [suppliers, setSuppliers] = useState(initialSuppliers && initialSuppliers.length ? initialSuppliers : seedSuppliers);
-  const [payables, setPayables] = useState(initialPayables && initialPayables.length ? initialPayables : seedPayables);
-  const [sales, setSales] = useState(initialSales && initialSales.length ? initialSales : seedSales);
+  const [products, setProducts] = useState(initialProducts || []);
+  const [customers, setCustomers] = useState(initialCustomers || []);
+  const [suppliers, setSuppliers] = useState(initialSuppliers || []);
+  const [payables, setPayables] = useState(initialPayables || []);
+  const [sales, setSales] = useState(initialSales || []);
   const [crediario, setCrediario] = useState(initialCrediario || []);
   const [caixa, setCaixa] = useState(initialCaixa || { aberto: false, valorInicial: 0, sangrias: [] });
 
