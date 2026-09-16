@@ -236,6 +236,21 @@ export default function AppShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const excluirVenda = async (sale) => {
+    try {
+      await excluirVendaAcao(sale.id);
+      setSales((s) => s.filter((x) => x.id !== sale.id));
+      setProducts((ps) => ps.map((p) => {
+        const item = sale.itens.find((i) => i.produtoId === p.id);
+        return item ? { ...p, estoque: p.estoque + item.qtd } : p;
+      }));
+      setCrediario((cr) => cr.filter((c) => c.vendaId !== sale.id));
+      pushToast("Venda excluída e estoque devolvido");
+    } catch (e) {
+      pushToast("Erro ao excluir a venda", "error");
+    }
+  };
+
   const notificacoesVencimento = crediario.filter((c) =>
     c.status === "Pendente" && c.vencimento && diasRestantes(c.vencimento) <= 2 && !dismissedNotifs.includes(c.id)
   );
@@ -372,14 +387,14 @@ export default function AppShell({
       <div className="app-content" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         <div style={{ padding: "26px 32px", flex: 1, overflow: "auto" }}>
           {screen === "pdv" && (
-            <PDV {...{ products, setProducts, customers, setCustomers, sales, setSales, caixa, setCaixa, crediario, setCrediario, pushToast }} />
+            <PDV {...{ products, setProducts, customers, setCustomers, sales, setSales, caixa, setCaixa, crediario, setCrediario, excluirVenda, pushToast }} />
           )}
           {screen === "estoque" && <Estoque {...{ products, setProducts, pushToast }} />}
           {screen === "clientes" && <Clientes {...{ customers, setCustomers, pushToast }} />}
           {screen === "fornecedores" && <Fornecedores {...{ suppliers, setSuppliers, pushToast }} />}
           {screen === "financeiro" && <Financeiro {...{ payables, setPayables, sales, pushToast }} />}
           {screen === "crediario" && <Crediario {...{ crediario, setCrediario, sales, customers, pushToast }} />}
-          {screen === "diario" && <FaturamentoDia {...{ sales, caixa, crediario }} />}
+          {screen === "diario" && <FaturamentoDia {...{ sales, caixa, crediario, excluirVenda }} />}
           {screen === "dashboard" && <DashboardMensal {...{ sales, products, payables, customers, crediario }} />}
           {screen === "relatorios" && <Relatorios {...{ sales, products, customers, payables }} />}
         </div>
@@ -393,7 +408,7 @@ export default function AppShell({
 
 // ---------- Login ----------
 // ---------- PDV ----------
-function PDV({ products, setProducts, customers, setCustomers, sales, setSales, caixa, setCaixa, crediario, setCrediario, pushToast }) {
+function PDV({ products, setProducts, customers, setCustomers, sales, setSales, caixa, setCaixa, crediario, setCrediario, excluirVenda, pushToast }) {
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState([]);
   const [clienteNome, setClienteNome] = useState("");
@@ -478,21 +493,6 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
       setCart([]); setClienteNome(""); setDesconto(0); setAcrescimo(0); setEntradaCrediario(0); setPrazoDias(30); setParcelasCrediario(1); setValorRecebidoDinheiro(""); setPagamento("Pix");
     } catch (e) {
       pushToast("Erro ao finalizar a venda", "error");
-    }
-  };
-
-  const excluirVenda = async (sale) => {
-    try {
-      await excluirVendaAcao(sale.id);
-      setSales((s) => s.filter((x) => x.id !== sale.id));
-      setProducts((ps) => ps.map((p) => {
-        const item = sale.itens.find((i) => i.produtoId === p.id);
-        return item ? { ...p, estoque: p.estoque + item.qtd } : p;
-      }));
-      setCrediario((cr) => cr.filter((c) => c.vendaId !== sale.id));
-      pushToast("Venda excluída e estoque devolvido");
-    } catch (e) {
-      pushToast("Erro ao excluir a venda", "error");
     }
   };
 
@@ -1407,33 +1407,43 @@ function EditarPromissoriaForm({ item, onSave }) {
 }
 
 // ---------- Faturamento do Dia ----------
-function FaturamentoDia({ sales, caixa, crediario }) {
-  const isoToday = today.toISOString().slice(0, 10);
-  const vendasHoje = sales.filter((s) => s.data === isoToday);
+function FaturamentoDia({ sales, caixa, crediario, excluirVenda }) {
+  const [diaSelecionado, setDiaSelecionado] = useState(today.toISOString().slice(0, 10));
+  const dataObj = new Date(diaSelecionado + "T00:00:00");
+  const isoDia = diaSelecionado;
+  const isHoje = isoDia === today.toISOString().slice(0, 10);
+
+  const mudarDia = (delta) => {
+    const d = new Date(diaSelecionado + "T00:00:00");
+    d.setDate(d.getDate() + delta);
+    setDiaSelecionado(d.toISOString().slice(0, 10));
+  };
+
+  const vendasDoDia = sales.filter((s) => s.data === isoDia);
   // regime de caixa: entrada de crediário conta, saldo não
-  const faturamentoCaixa = vendasHoje.reduce((sum, s) => sum + (s.pagamento.startsWith("Crediário") || s.entradaCrediario !== undefined ? s.entradaCrediario : s.total), 0);
-  const recebimentosHoje = crediario.flatMap((c) => c.recebimentos.filter((r) => r.data === isoToday).map((r) => ({ ...r, clienteNome: c.clienteNome })));
-  const totalRecebidoCrediarioHoje = recebimentosHoje.reduce((s, r) => s + r.valor, 0) - vendasHoje.reduce((s, v) => s + (v.entradaCrediario || 0), 0);
-  const faturamentoTotal = faturamentoCaixa + Math.max(0, totalRecebidoCrediarioHoje);
-  const sangriasHoje = caixa.sangrias.reduce((s, x) => s + Number(x.valor), 0);
+  const faturamentoCaixa = vendasDoDia.reduce((sum, s) => sum + (s.pagamento.startsWith("Crediário") || s.entradaCrediario !== undefined ? s.entradaCrediario : s.total), 0);
+  const recebimentosDoDia = crediario.flatMap((c) => c.recebimentos.filter((r) => r.data === isoDia).map((r) => ({ ...r, clienteNome: c.clienteNome })));
+  const totalRecebidoCrediarioDia = recebimentosDoDia.reduce((s, r) => s + r.valor, 0) - vendasDoDia.reduce((s, v) => s + (v.entradaCrediario || 0), 0);
+  const faturamentoTotal = faturamentoCaixa + Math.max(0, totalRecebidoCrediarioDia);
+  const sangriasDoDia = isHoje ? caixa.sangrias.reduce((s, x) => s + Number(x.valor), 0) : 0;
   const porForma = {};
-  vendasHoje.forEach((s) => { const v = s.entradaCrediario !== undefined ? s.entradaCrediario : s.total; porForma[s.pagamento] = (porForma[s.pagamento] || 0) + v; });
+  vendasDoDia.forEach((s) => { const v = s.entradaCrediario !== undefined ? s.entradaCrediario : s.total; porForma[s.pagamento] = (porForma[s.pagamento] || 0) + v; });
 
   const kpis = [
     ["Faturamento (caixa)", brl(faturamentoTotal)],
-    ["Nº de vendas", vendasHoje.length],
-    ["Ticket médio", brl(vendasHoje.length ? vendasHoje.reduce((s, v) => s + v.total, 0) / vendasHoje.length : 0)],
-    ["Sangrias do dia", brl(sangriasHoje)],
-    ["Recebido de crediário hoje", brl(Math.max(0, totalRecebidoCrediarioHoje))],
+    ["Nº de vendas", vendasDoDia.length],
+    ["Ticket médio", brl(vendasDoDia.length ? vendasDoDia.reduce((s, v) => s + v.total, 0) / vendasDoDia.length : 0)],
+    ["Sangrias do dia", brl(sangriasDoDia)],
+    ["Recebido de crediário no dia", brl(Math.max(0, totalRecebidoCrediarioDia))],
   ];
 
   const formasFixas = ["Pix", "Dinheiro", "Débito", "Crédito", "Crediário (entrada)"];
   const porFormaFixo = formasFixas.map((label) => {
     if (label === "Crediário (entrada)") {
-      const v = vendasHoje.reduce((s, x) => s + (x.entradaCrediario || 0), 0);
+      const v = vendasDoDia.reduce((s, x) => s + (x.entradaCrediario || 0), 0);
       return [label, v];
     }
-    const v = vendasHoje.filter((s) => s.pagamento === label || s.pagamento.startsWith(label)).reduce((s, x) => s + x.total, 0);
+    const v = vendasDoDia.filter((s) => s.pagamento === label || s.pagamento.startsWith(label)).reduce((s, x) => s + x.total, 0);
     return [label, v];
   });
 
@@ -1441,9 +1451,17 @@ function FaturamentoDia({ sales, caixa, crediario }) {
 
   return (
     <div>
-      <div style={{ marginBottom: 22 }}>
-        <h2 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#23231F", letterSpacing: -.2 }}>Faturamento do Dia</h2>
-        <div style={{ fontSize: 13.5, color: "#8C897E", marginTop: 4 }}>Movimentações de hoje — {fmtDate(today)}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22, flexWrap: "wrap", gap: 14 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#23231F", letterSpacing: -.2 }}>Faturamento do Dia</h2>
+          <div style={{ fontSize: 13.5, color: "#8C897E", marginTop: 4 }}>Movimentações de {isHoje ? "hoje — " : ""}{fmtDate(dataObj)}</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button style={iconBtn} onClick={() => mudarDia(-1)} title="Dia anterior">←</button>
+          <input type="date" style={{ ...inputStyle, width: 160 }} value={diaSelecionado} onChange={(e) => setDiaSelecionado(e.target.value)} />
+          <button style={iconBtn} onClick={() => mudarDia(1)} title="Dia seguinte">→</button>
+          {!isHoje && <button style={btnGhost} onClick={() => setDiaSelecionado(today.toISOString().slice(0, 10))}>Hoje</button>}
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 14, marginBottom: 26, flexWrap: "wrap" }}>
@@ -1455,7 +1473,7 @@ function FaturamentoDia({ sales, caixa, crediario }) {
         ))}
       </div>
 
-      <h3 style={{ fontSize: 15, margin: "0 0 10px" , color: "#23231F", fontWeight: 700 }}>Vendas por forma de pagamento</h3>
+      <h3 style={{ fontSize: 15, margin: "0 0 10px", color: "#23231F", fontWeight: 700 }}>Vendas por forma de pagamento</h3>
       <div style={{ display: "flex", gap: 14, marginBottom: 26, flexWrap: "wrap" }}>
         {porFormaFixo.map(([f, v]) => (
           <div key={f} style={statCard}>
@@ -1465,19 +1483,22 @@ function FaturamentoDia({ sales, caixa, crediario }) {
         ))}
       </div>
 
-      <h3 style={{ fontSize: 15, marginBottom: 8 , color: "#23231F", fontWeight: 700 }}>Vendas de hoje</h3>
-      {vendasHoje.length === 0 ? <div style={{ color: "#96938A", fontSize: 13.5, marginBottom: 24 }}>Nenhuma venda registrada hoje.</div> : (
+      <h3 style={{ fontSize: 15, marginBottom: 8, color: "#23231F", fontWeight: 700 }}>Vendas {isHoje ? "de hoje" : "do dia"}</h3>
+      {vendasDoDia.length === 0 ? <div style={{ color: "#96938A", fontSize: 13.5, marginBottom: 24 }}>Nenhuma venda registrada nesse dia.</div> : (
         <div style={{ background: "#fff", border: "1px solid #E1DDD3", borderRadius: 8, overflow: "hidden", marginBottom: 24 }}>
           <table>
-            <thead><tr><th style={th}>Hora</th><th style={th}>Cliente</th><th style={th}>Itens</th><th style={th}>Total</th><th style={th}>Pagamento</th></tr></thead>
+            <thead><tr><th style={th}>Hora</th><th style={th}>Cliente</th><th style={th}>Itens</th><th style={th}>Total</th><th style={th}>Pagamento</th><th style={th}></th></tr></thead>
             <tbody>
-              {vendasHoje.map((s) => (
+              {vendasDoDia.map((s) => (
                 <tr key={s.id}>
                   <td style={td}>{s.hora}</td>
                   <td style={td}>{s.cliente || <span style={{ color: "#96938A" }}>—</span>}</td>
                   <td style={td}>{s.itens.length} item(ns)</td>
                   <td style={td}><b>{brl(s.total)}</b></td>
                   <td style={td}>{s.pagamento}</td>
+                  <td style={td}>
+                    <button style={{ ...iconBtn, background: "#FBE8E6", borderColor: "#F0C6C2", color: "#B3261E" }} onClick={() => excluirVenda(s)}><Trash2 size={13} /></button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1485,11 +1506,11 @@ function FaturamentoDia({ sales, caixa, crediario }) {
         </div>
       )}
 
-      <h3 style={{ fontSize: 15, marginBottom: 8 , color: "#23231F", fontWeight: 700 }}>Recebimentos de crediário hoje</h3>
-      {recebimentosHoje.length === 0 ? <div style={{ color: "#96938A", fontSize: 13.5 }}>Nenhum recebimento hoje.</div> : (
+      <h3 style={{ fontSize: 15, marginBottom: 8, color: "#23231F", fontWeight: 700 }}>Recebimentos de crediário {isHoje ? "hoje" : "do dia"}</h3>
+      {recebimentosDoDia.length === 0 ? <div style={{ color: "#96938A", fontSize: 13.5 }}>Nenhum recebimento nesse dia.</div> : (
         <div style={{ background: "#fff", border: "1px solid #E1DDD3", borderRadius: 8, overflow: "hidden" }}>
           <table><thead><tr><th style={th}>Hora</th><th style={th}>Cliente</th><th style={th}>Valor</th></tr></thead>
-            <tbody>{recebimentosHoje.map((r, i) => <tr key={i}><td style={td}>{r.hora}</td><td style={td}>{r.clienteNome}</td><td style={td}>{brl(r.valor)}</td></tr>)}</tbody>
+            <tbody>{recebimentosDoDia.map((r, i) => <tr key={i}><td style={td}>{r.hora}</td><td style={td}>{r.clienteNome}</td><td style={td}>{brl(r.valor)}</td></tr>)}</tbody>
           </table>
         </div>
       )}
