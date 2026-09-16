@@ -259,6 +259,14 @@ export default function AppShell({
         button:hover { opacity: .92; }
         table { border-collapse: collapse; width: 100%; }
         @keyframes slideInNotif { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+        .print-only-header { display: none; }
+        @media print {
+          body * { visibility: hidden; }
+          .print-area, .print-area * { visibility: visible; }
+          .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 24px; background: #fff; }
+          .print-only-header { display: block; }
+          table, th, td { border: 1px solid #000 !important; }
+        }
       `}</style>
       <Toast toasts={toasts} />
       {notificacoesVencimento.length > 0 && (
@@ -642,7 +650,7 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
 
       {comprovanteVenda && (
         <Modal title="Comprovante da venda" onClose={() => setComprovanteVenda(null)} width={380}>
-          <div style={{ fontSize: 13.5, color: "#23231F" }}>
+          <div className="print-area" style={{ fontSize: 13.5, color: "#23231F" }}>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontWeight: 700, fontSize: 15 }}>Papelaria Moura</div>
               <div style={{ fontSize: 12, color: "#8C897E" }}>{comprovanteVenda.data.split("-").reverse().join("/")} às {comprovanteVenda.hora} · {comprovanteVenda.cliente || "Cliente balcão"}</div>
@@ -1282,7 +1290,7 @@ function Crediario({ crediario, setCrediario, sales, customers, pushToast }) {
       )}
       {comprovante && (
         <Modal title="Comprovante de recebimento" onClose={() => setComprovante(null)} width={380}>
-          <div id="comprovante-print" style={{ fontSize: 13.5, color: "#23231F" }}>
+          <div className="print-area" id="comprovante-print" style={{ fontSize: 13.5, color: "#23231F" }}>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontWeight: 700, fontSize: 15 }}>Papelaria Moura</div>
               <div style={{ fontSize: 12, color: "#23231F" }}>Comprovante de recebimento — Promissória</div>
@@ -1628,19 +1636,26 @@ function Relatorios({ sales, products, customers, payables }) {
         </div>
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E1DDD3", borderRadius: 10, overflow: "auto" }}>
-        <table>
-          <thead><tr>{resultado.length > 0 && Object.keys(resultado[0]).filter((k) => k !== "itens" && k !== "recebimentos").map((k) => <th key={k} style={th}>{k}</th>)}</tr></thead>
-          <tbody>
-            {resultado.length === 0 && <tr><td style={td}><span style={{ color: "#96938A" }}>Nenhum dado encontrado para esse filtro.</span></td></tr>}
-            {resultado.map((row, i) => (
-              <tr key={i}>{Object.keys(row).filter((k) => k !== "itens" && k !== "recebimentos").map((k) => <td key={k} style={td}>{typeof row[k] === "number" && (k.toLowerCase().includes("valor") || k.toLowerCase().includes("total") || k.toLowerCase().includes("preco") || k.toLowerCase().includes("custo")) ? brl(row[k]) : String(row[k])}</td>)}</tr>
-            ))}
-            {tipo === "vendas" && resultado.length > 0 && (
-              <tr><td style={{ ...td, fontWeight: 700 }} colSpan={Object.keys(resultado[0]).filter((k) => k !== "itens" && k !== "recebimentos").length - 1}>Total geral</td><td style={{ ...td, fontWeight: 700 }}>{brl(totalVendas)}</td></tr>
-            )}
-          </tbody>
+      <div className="print-area">
+        <div className="print-only-header" style={{ textAlign: "center", marginBottom: 18 }}>
+          <img src={LOGO} alt="Papelaria Moura" style={{ maxWidth: 140, margin: "0 auto 8px" }} />
+          <div style={{ fontSize: 16, fontWeight: 700 }}>Relatório de {opts.find((o) => o.id === tipo).label}</div>
+          <div style={{ fontSize: 11, color: "#6B6B62" }}>Gerado em {fmtDate(today)} às {fmtTime(today)}</div>
+        </div>
+        <div style={{ background: "#fff", border: "1px solid #E1DDD3", borderRadius: 10, overflow: "auto" }}>
+          <table>
+            <thead><tr>{resultado.length > 0 && Object.keys(resultado[0]).filter((k) => k !== "itens" && k !== "recebimentos").map((k) => <th key={k} style={th}>{k}</th>)}</tr></thead>
+            <tbody>
+              {resultado.length === 0 && <tr><td style={td}><span style={{ color: "#96938A" }}>Nenhum dado encontrado para esse filtro.</span></td></tr>}
+              {resultado.map((row, i) => (
+                <tr key={i}>{Object.keys(row).filter((k) => k !== "itens" && k !== "recebimentos").map((k) => <td key={k} style={td}>{typeof row[k] === "number" && (k.toLowerCase().includes("valor") || k.toLowerCase().includes("total") || k.toLowerCase().includes("preco") || k.toLowerCase().includes("custo")) ? brl(row[k]) : String(row[k])}</td>)}</tr>
+              ))}
+              {tipo === "vendas" && resultado.length > 0 && (
+                <tr><td style={{ ...td, fontWeight: 700 }} colSpan={Object.keys(resultado[0]).filter((k) => k !== "itens" && k !== "recebimentos").length - 1}>Total geral</td><td style={{ ...td, fontWeight: 700 }}>{brl(totalVendas)}</td></tr>
+              )}
+            </tbody>
         </table>
+      </div>
       </div>
     </div>
   );
