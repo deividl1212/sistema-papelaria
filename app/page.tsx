@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import AppShell from "./AppShell";
 
-function dataHoraBR(date) {
+function dataHoraBR(date: Date) {
   return {
     data: date.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }),
     hora: date.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }),
+    horaCompleta: date.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", second: "2-digit" }),
   };
 }
 

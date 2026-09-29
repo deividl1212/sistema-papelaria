@@ -53,8 +53,13 @@ const comprovanteTexto = (c) => [
 ].filter(Boolean).join("\n");
 
 const comprovanteVendaTexto = (v) => [
-  "*Papelaria Moura*",
-  `Data: ${v.data.split("-").reverse().join("/")}    Hora: ${v.hora}`,
+  "*PAPELARIA MOURA - UM NOVO TEMPO*",
+  "VL Canafistula, SN Zona Rural - Jucás - CE",
+  "Telefone: (88) 9724-2868",
+  "CNPJ: 67.938.166/0001-24  IE: 067939821",
+  "------------------------------",
+  `Data: ${v.data.split("-").reverse().join("/")} ${v.horaCompleta || v.hora}`,
+  `Cód.: ${v.id}`,
   `Cliente: ${v.cliente || "Cliente balcão"}`,
   "------------------------------",
   ...v.itens.map((i) => `${i.qtd}x ${i.nome} — ${brl(i.preco * i.qtd)}`),
@@ -654,13 +659,18 @@ function PDV({ products, setProducts, customers, setCustomers, sales, setSales, 
       {comprovanteVenda && (
         <Modal title="Comprovante da venda" onClose={() => setComprovanteVenda(null)} width={380}>
           <style>{`@media print { @page { size: 80mm auto; margin: 4mm; } body { margin: 0; } }`}</style>
-          <div className="print-area" style={{ fontSize: 12, color: "#23231F", fontFamily: "'Courier New', Courier, monospace" }}>
-            <div style={{ textAlign: "center", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Papelaria Moura</div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5 }}>
-              <span>Data: {comprovanteVenda.data.split("-").reverse().join("/")}</span>
-              <span>Hora: {comprovanteVenda.hora}</span>
-            </div>
-            <div style={{ fontSize: 11.5 }}>Cliente: {comprovanteVenda.cliente || "Cliente balcão"}</div>
+          <div className="print-area" style={{ fontSize: 11.5, color: "#23231F", fontFamily: "'Courier New', Courier, monospace" }}>
+            <div style={{ textAlign: "center", fontWeight: 700, fontSize: 13.5 }}>PAPELARIA MOURA - UM NOVO TEMPO</div>
+            <div style={{ textAlign: "center" }}>VL CANAFISTULA, SN ZONA RURAL - JUCÁS - CE</div>
+            <div style={{ textAlign: "center" }}>TELEFONE: (88) 9724-2868</div>
+            <div style={{ textAlign: "center" }}>CNPJ: 67.938.166/0001-24</div>
+            <div style={{ textAlign: "center", marginBottom: 6 }}>IE: 067939821</div>
+
+            <div style={{ borderTop: "1px dashed #999", margin: "8px 0" }} />
+
+            <div>DATA: {comprovanteVenda.data.split("-").reverse().join("/")} {comprovanteVenda.horaCompleta || comprovanteVenda.hora}</div>
+            <div>COD.: {comprovanteVenda.id}</div>
+            <div style={{ marginTop: 6 }}>Cliente: {comprovanteVenda.cliente || "Cliente balcão"}</div>
 
             <div style={{ borderTop: "1px dashed #999", margin: "10px 0" }} />
 
